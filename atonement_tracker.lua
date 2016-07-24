@@ -11,7 +11,7 @@ function AtonementTracker:Create()
 
     local backdrop = {
       -- path to the background texture
-      bgFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Background",  
+      bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",  
       -- true to repeat the background texture to fill the frame, false to scale it
       tile = true,
       -- size (width or height) of the square repeating background tiles (in pixels)
@@ -19,6 +19,7 @@ function AtonementTracker:Create()
     }
 
     tracker.f:SetBackdrop(backdrop)
+    tracker.f:SetBackdropColor(0, 0, 1, 0.8)
 
 
     tracker.atonements = {}
@@ -30,6 +31,7 @@ function AtonementTracker:Create()
     local last_lbl = nil
     for i=0,10 do
         lbl = tracker.f:CreateFontString(nil, "ARTWORK", "ChatFontNormal")
+        lbl:SetFont("Fonts\\FRIZQT__.TTF", 15, "OUTLINE, MONOCHROME")
         lbl:SetText(i)
         lbl:Hide()
         if last_lbl == nil then
@@ -62,19 +64,6 @@ function AtonementTracker:Create()
     tracker.f:Show()
 
     return tracker
-end
-
-function AtonementTracker:Apply(src, dst)
-    print(dst)
-
-    atonement = {}
-    atonement.timer = 15
-    atonement.target = dst
-    self.atonements[dst] = atonement
-    
-    self.active = self.active + 1
-
-    self:Reorganize()
 end
 
 function AtonementTracker:GetSortedAtonements()
@@ -115,8 +104,18 @@ function AtonementTracker:UpdateGui()
     end
 end
 
+function AtonementTracker:Apply(src, dst)
+    atonement = {}
+    atonement.timer = 15
+    atonement.target = dst
+    self.atonements[dst] = atonement
+    
+    self.active = self.active + 1
+
+    self:Reorganize()
+end
+
 function AtonementTracker:Remove(src, dst)
-    print(dst)
     if self.atonements[dst] ~= nil then
         self.atonements[dst] = nil
         self.active = self.active - 1
@@ -125,7 +124,6 @@ function AtonementTracker:Remove(src, dst)
 end
 
 function AtonementTracker:Refresh(src, dst)
-    print(dst)
     if self.atonements[dst] ~= nil then
         self.atonements[dst].timer = 15
         self:Reorganize()
@@ -137,13 +135,10 @@ function AtonementTracker:Event(eventtype, src_name, dst_name, spell_id, spell_n
         local src = src_name
         local dst = dst_name
         if eventtype == "SPELL_AURA_APPLIED" then
-            print("Applied: ["..spell_name.."]")
             self:Apply(src, dst)
         elseif eventtype == "SPELL_AURA_REFRESH" then
-            print("Refreshed: ["..spell_name.."]")
             self:Refresh(src, dst)
         elseif eventtype == "SPELL_AURA_REMOVED" then
-            print("Removed: ["..spell_name.."]")
             self:Remove(src, dst)
         end
     end
