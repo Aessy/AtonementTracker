@@ -81,9 +81,21 @@ function AtonementTracker:Reorganize()
     for k, v in ipairs(self.atonement_labels) do
         v.lbl:Hide()
         if atonement < self.active + 1 then
+            v.count = 1
+            for i = atonement+1, #sorted do
+                if sorted[i].timer < sorted[atonement].timer + 0.2 then
+                    atonement = atonement + 1
+                    v.count = v.count + 1
+                else
+                    break
+                end
+            end
             v.atonement = sorted[atonement]
-            v.valid = true
+            v.active = true
             atonement = atonement + 1
+        else
+            v.active = false
+            v.atonement = nil
         end
     end
 
@@ -91,20 +103,26 @@ function AtonementTracker:Reorganize()
 end
 
 function AtonementTracker:UpdateGui()
-    local atonement = 1
+    local atonement = 0
+    last_timer = 0
     for k, v in ipairs(self.atonement_labels) do
-        if atonement < self.active + 1 then
-            v.lbl:SetText((self.active - atonement + 1)..": "..string.format("%.1f",v.atonement.timer))
-            if atonement == 1 then
+        v.lbl:Hide()
+        if v.active == true then
+            if atonement == 0 then
+                v.lbl:SetText((self.active - atonement)..": "..string.format("%.1f",v.atonement.timer))
                 v.lbl:SetTextColor(1,0,0)
+            else
+                v.lbl:SetText((self.active - atonement)..": "..string.format("%.1f",v.atonement.timer - last_timer))
             end
             v.lbl:Show()
+            last_timer = v.atonement.timer
+            atonement = atonement + v.count
         end
-        atonement = atonement + 1
     end
 end
 
 function AtonementTracker:Apply(src, dst)
+
     atonement = {}
     atonement.timer = 15
     atonement.target = dst
