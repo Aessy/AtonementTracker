@@ -115,7 +115,7 @@ function AtonementTracker:UpdateGui()
                 v.lbl:SetText((self.active - atonement)..": "..string.format("%.1f",v.atonement.timer - last_timer))
             end
             v.lbl:Show()
-            last_timer = v.atonement.timer
+            --last_timer = v.atonement.timer
             atonement = atonement + v.count
         end
     end
