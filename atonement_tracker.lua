@@ -7,7 +7,63 @@ function AtonementTracker:Create()
     local tracker = {}
     setmetatable(tracker, AtonementTracker)
 
-    tracker.f = CreateFrame("FRAME", nil, UIParent)
+    tracker.frame = CreateFrame("Frame", nil, UIParent)
+    tracker.frame:SetSize(106, 200)
+    tracker.frame:SetPoint("CENTER", UIParent)
+    tracker.frame:SetBackdrop({
+        bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark", tile = true, tileSize = 16,
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 5,
+        insets = { left = 2, right = 2, top = 2, bottom = 2, },
+    })
+    tracker.frame:SetBackdropColor(0, 0, 1, 0.8)
+
+    tracker.frame:SetMovable(true)
+    tracker.frame:EnableMouse(true)
+    tracker.frame:RegisterForDrag("LeftButton")
+    tracker.frame:SetScript("OnDragStart", function(self, button)
+        tracker.frame:StartMoving()
+    end)
+    tracker.frame:SetScript("OnDragStop", function(self, button)
+        tracker.frame:StopMovingOrSizing()
+    end)
+
+    tracker.bars = {}
+    local last_bar = nil
+    for i=1,10 do
+        b = {}
+
+        b.bar = CreateFrame("StatusBar", nil, tracker.frame)
+        b.bar:SetHeight(16)
+        b.bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+        b.bar:GetStatusBarTexture():SetHorizTile(false)
+        b.bar:GetStatusBarTexture():SetVertTile(false)
+        b.bar:SetStatusBarColor(0,0,1)
+        b.bar:SetMinMaxValues(0,15)
+        b.bar:SetValue(0)
+
+        if last_bar == nil then
+            b.bar:SetPoint("TOPLEFT", 3, -3)
+            b.bar:SetPoint("TOPRIGHT", -3, -3)
+        else
+            b.bar:SetPoint("TOPRIGHT", last_bar, "BOTTOMRIGHT", 0, -1)
+            b.bar:SetPoint("TOPLEFT", last_bar, "BOTTOMLEFT", 0, -1)
+        end
+
+
+        b.value = b.bar:CreateFontString(nil, "OVERLAY")
+        b.value:SetPoint("LEFT", b.bar, "LEFT", 4, 0)
+        b.value:SetFont("Fonts\\FRIZQT__.TTF", 15, "OUTLINE")
+        b.value:SetJustifyH("LEFT")
+        b.value:SetShadowOffset(1, -1)
+
+        b.bar:Show()
+        b.value:Show()
+
+        tracker.bars[i] = b
+
+        last_bar = b.bar
+
+    end
 
     local backdrop = {
       -- path to the background texture
@@ -18,50 +74,11 @@ function AtonementTracker:Create()
       tileSize = 32,
     }
 
-    tracker.f:SetBackdrop(backdrop)
-    tracker.f:SetBackdropColor(0, 0, 1, 0.8)
-
-
     tracker.atonements = {}
     tracker.active = 0
 
     tracker.atonement_labels = {}
     tracker.active_labels = 0
-
-    local last_lbl = nil
-    for i=0,10 do
-        lbl = tracker.f:CreateFontString(nil, "ARTWORK", "ChatFontNormal")
-        lbl:SetFont("Fonts\\FRIZQT__.TTF", 15, "OUTLINE, MONOCHROME")
-        lbl:SetText(i)
-        lbl:Hide()
-        if last_lbl == nil then
-            lbl:SetPoint("TOPLEFT", tracker.f, "TOPLEFT")
-        else
-            lbl:SetPoint("TOPLEFT", last_lbl, "BOTTOMLEFT")
-        end
-        atn = {}
-        atn.lbl = lbl
-        atn.active = false
-        tracker.atonement_labels[i] = atn
-        last_lbl = lbl
-    end
-
-    tracker.f:SetMovable(true)
-
-    tracker.f:EnableMouse(true)
-    tracker.f:RegisterForDrag("LeftButton")
-
-    tracker.f:SetScript("OnDragStart", function(self, button)
-        tracker.f:StartMoving()
-    end)
-    tracker.f:SetScript("OnDragStop", function(self, button)
-        tracker.f:StopMovingOrSizing()
-    end)
-
-    tracker.f:SetWidth(110)
-    tracker.f:SetHeight(200)
-    tracker.f:SetPoint("CENTER", UIParent, "CENTER")
-    tracker.f:Show()
 
     return tracker
 end
@@ -78,8 +95,8 @@ function AtonementTracker:Reorganize()
     sorted = self:GetSortedAtonements()
 
     local atonement = 1
-    for k, v in ipairs(self.atonement_labels) do
-        v.lbl:Hide()
+    for k, v in ipairs(self.bars) do
+        v.bar:Hide()
         if atonement < self.active + 1 then
             v.count = 1
             for i = atonement+1, #sorted do
@@ -105,16 +122,18 @@ end
 function AtonementTracker:UpdateGui()
     local atonement = 0
     last_timer = 0
-    for k, v in ipairs(self.atonement_labels) do
-        v.lbl:Hide()
+    for k, v in ipairs(self.bars) do
+        v.bar:Hide()
         if v.active == true then
             if atonement == 0 then
-                v.lbl:SetText((self.active - atonement)..": "..string.format("%.1f",v.atonement.timer))
-                v.lbl:SetTextColor(1,0,0)
+                v.value:SetText((self.active - atonement)..": "..string.format("%.1f",v.atonement.timer))
+                v.value:SetTextColor(1,0,0)
             else
-                v.lbl:SetText((self.active - atonement)..": "..string.format("%.1f",v.atonement.timer - last_timer))
+                v.value:SetText((self.active - atonement)..": "..string.format("%.1f",v.atonement.timer - last_timer))
             end
-            v.lbl:Show()
+            v.bar:SetValue(v.atonement.timer)
+            v.bar:Show()
+            v.value:Show()
             --last_timer = v.atonement.timer
             atonement = atonement + v.count
         end
@@ -183,7 +202,9 @@ function AtonementTracker:Tick(elapsed)
     end
 end
 
+
 local current_window = AtonementTracker:Create()
+
 
 local event_handler = CreateFrame("Frame")
 event_handler:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
