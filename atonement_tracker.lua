@@ -152,12 +152,14 @@ function AtonementTracker:Event(eventtype, src_name, dst_name, spell_id, spell_n
     if spell_name == "Atonement" then
         local src = src_name
         local dst = dst_name
-        if eventtype == "SPELL_AURA_APPLIED" then
-            self:Apply(src, dst)
-        elseif eventtype == "SPELL_AURA_REFRESH" then
-            self:Refresh(src, dst)
-        elseif eventtype == "SPELL_AURA_REMOVED" then
-            self:Remove(src, dst)
+        if src_name == UnitGUID("player") then
+            if eventtype == "SPELL_AURA_APPLIED" then
+                self:Apply(src, dst)
+            elseif eventtype == "SPELL_AURA_REFRESH" then
+                self:Refresh(src, dst)
+            elseif eventtype == "SPELL_AURA_REMOVED" then
+                self:Remove(src, dst)
+            end
         end
     end
 end
@@ -186,7 +188,7 @@ local current_window = AtonementTracker:Create()
 local event_handler = CreateFrame("Frame")
 event_handler:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 event_handler:SetScript("OnEvent", function(frame, event, timestamp, eventtype, hideCaster, srcGUID, srcName, srcFlags, srcRaidFlags, dstGUID, dstName, dstFlags, dstRaidFlags, ...)
-    current_window:Event(eventtype, srcName, dstName, ...)
+    current_window:Event(eventtype, srcGUID, dstGUID, ...)
 end)
 
 event_handler:SetScript("OnUpdate", function(self, elapsed)
